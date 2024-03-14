@@ -8,34 +8,41 @@ import numpy as np
 
 
 class Patch:
+    def __init__(self, x: int, y: int, image: np.ndarray, ground_truth: np.ndarray):
 
-    def __init__(self, x, y, img):
+        self.x = x
 
-        self.x = int(x)
-
-        self.y = int(y)
-        self.img = img
+        self.y = y
+        self.img = image
+        self.gt = ground_truth
 
     def __repr__(self):
 
         return f"(x={self.x}, y={self.y})"
 
 
-# Example usage:
-# Assuming image_array is your numpy array of shape (height, width, channels)
-# To divide the image into square patches of size 50x50 pixels:
-# patches = divide_image_into_square_patches(image_array, 50)
 class Page:
+    def __init__(
+        self,
+        image: np.ndarray,
+        ground_truth: np.ndarray,
+        name: str,
+        square_size: int = 832,
+    ):
+        self.img = image
+        self.gt = ground_truth
+        self.name = name
+        self.grid = self.divide_image_into_square_patches(square_size)
+
     def divide_image_into_square_patches(self, patch_size):
         """
         Divides an image represented by a numpy array into square patches.
 
         Parameters:
-        - image_array: numpy array representing the image, with shape (height, width, channels).
         - patch_size: integer, the size of each square patch in pixels.
 
         Returns:
-        - A list of numpy arrays, each representing a square patch of the original image.
+        - A list of Patches, each representing a square patch of the original image.
         """
         self.grid = []
         height, width, _ = self.img.shape
@@ -44,7 +51,6 @@ class Page:
         patches_x = height // patch_size
         patches_y = width // patch_size
 
-        patches = []
         for i in range(patches_x):
             for j in range(patches_y):
                 start_x = i * patch_size
@@ -54,17 +60,14 @@ class Page:
 
                 # Slice the image array to get the current patch and add it to the list
                 content = self.img[start_x:end_x, start_y:end_y, :]
-                new_patch = Patch(i, j, content)
+                gt = self.gt[start_x:end_x, start_y:end_y]
+                new_patch = Patch(i, j, content, gt)
                 self.grid.append(new_patch)
 
-    def __init__(self, image, ground_truth, name):
-        self.img = image
-        self.gt = ground_truth
-        self.name = name
-        self.grid = self.divide_image_into_square_patches(832)
-
     @classmethod
-    def from_file(self, image_path: str = None, xml_path: str = None):
+    def from_file(
+        self, image_path: str = None, xml_path: str = None, pixel_gt_path: str = None
+    ):
         if image_path and xml_path:
             with open(xml_path, "r") as file:
                 xml_data = file.read()
@@ -91,7 +94,7 @@ class Page:
                     ]
                     coordinates_by_group[group].append(coordinates_list)
             image = Image.open(image_path)
-
+            pixel_gt = Image.open(pixel_gt_path)
             colors = {"comment": 1, "body": 2, "decoration": 3}
             filled_polygon_img = Image.new("L", image.size)
             draw_filled_polygon = ImageDraw.Draw(filled_polygon_img)
@@ -102,10 +105,14 @@ class Page:
                     draw_filled_polygon.polygon(
                         polygon_coordinates, outline=None, fill=colors[group]
                     )
-
+            gt = np.array(filled_polygon_img)
+            mask = np.array(pixel_gt)
+            mask = mask[:, :, 0]  # All information is stored in the red colour channel.
+            non_zero_intersection = (gt != 0) & (mask != 0)
+            gt[non_zero_intersection] = 0
             return Page(
                 np.array(image),
-                np.array(filled_polygon_img),
+                np.array(gt),
                 image_path[image_path.rfind("/") + 1 : image_path.find(".")],
             )
 
