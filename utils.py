@@ -32,7 +32,8 @@ class Page:
         self.img = image
         self.gt = ground_truth
         self.name = name
-        self.grid = self.divide_image_into_square_patches(square_size)
+        self.grid = []
+        self.divide_image_into_square_patches(square_size)
 
     def divide_image_into_square_patches(self, patch_size):
         """
