@@ -29,3 +29,9 @@ the following variables might need to be changed to match a your path:
 * 'training.ipynb' was used to generate model weights
 * 'visualisations.ipynb' contains various visualisation methods and cells used during the course of the project
 * 'utils.py' contains functions which are used in one or more notebooks.
+
+# To do 
+* Implement L-U-Net AttentionU-Net in pytorch
+* Possibly revise U-Net
+* Benchmark the models
+* Decide downscaling size
