@@ -35,3 +35,4 @@ the following variables might need to be changed to match a your path:
 * Possibly revise U-Net
 * Benchmark the models
 * Decide downscaling size
+* Data augmentation
